@@ -1,394 +1,151 @@
-# DETEKSI TANDA TANGAN
+# Verifikasi Nomor Ijazah dan Deteksi Tanda Tangan
 
-Program ini merupakan implementasi Pengolahan Citra Digital untuk mendeteksi keberadaan tanda tangan pada citra dokumen.
+Program Python ini memproses kumpulan gambar ijazah untuk:
 
-Program mengolah dua kategori citra, yaitu:
+- membaca kandidat nomor ijazah menggunakan Tesseract OCR;
+- membandingkan tiga metode peningkatan citra: contrast stretching, CLAHE,
+  dan gamma correction;
+- menghitung Character Error Rate (CER) terhadap nomor ijazah acuan;
+- mendeteksi indikasi tanda tangan menggunakan thresholding, morphology, dan
+  connected components; serta
+- menampilkan ringkasan hasil untuk setiap gambar di terminal.
 
-- **Signature Present**: citra yang memiliki tanda tangan.
-- **Signature Absent**: citra sampel yang tidak memiliki tanda tangan.
+Program memproses gambar satu per satu. Hasilnya ditampilkan di terminal dan
+tidak disimpan sebagai berkas.
 
-## Metode Pengolahan
-
-Tahapan pengolahan citra yang digunakan dalam program ini meliputi:
-
-1. Membaca citra.
-2. Konversi citra ke **grayscale**.
-3. **Global Thresholding** untuk melakukan segmentasi foreground dan background.
-4. **Otsu Thresholding** untuk melakukan segmentasi secara otomatis berdasarkan nilai threshold.
-5. **Morphological Opening** untuk membantu mengurangi noise dan objek kecil.
-6. **Morphological Closing** untuk membantu menghubungkan bagian foreground yang terputus.
-7. Menghitung karakteristik hasil segmentasi.
-8. Menghitung jumlah **foreground pixel**.
-9. Menghitung jumlah **background pixel**.
-10. Menghitung persentase foreground.
-11. Menentukan prediksi **Signature Present** atau **Signature Absent**.
-12. Membuat gambar perbandingan seluruh hasil pengolahan.
-
-## Dataset
-
-Dataset terdiri dari 18 citra yang dibagi menjadi dua kategori.
-
-### Signature Present
-
-Folder:
+## Struktur proyek
 
 ```text
-tugasCitra/
+citra7/
+├── main.py
+└── gambar_ijazah/
+    ├── gambar_1.jpg
+    ├── gambar_2.jpg
+    └── ...
 ```
 
-Berisi 9 citra:
+Folder `gambar_ijazah` harus berada di direktori kerja saat program dijalankan.
+Program membaca berkas berformat `.jpg`, `.jpeg`, dan `.png` dari folder itu.
+Subfolder tidak dipindai.
+
+## Persyaratan
+
+- Windows
+- Python 3
+- Tesseract OCR untuk Windows
+- Paket Python: `opencv-python`, `numpy`, dan `pytesseract`
+
+## Instalasi
+
+### 1. Pasang Tesseract OCR
+
+Pasang Tesseract OCR dan pastikan file `tesseract.exe` tersedia di salah satu
+lokasi yang diperiksa oleh program:
 
 ```text
-01_HighQuality_Enhanced (2)(1).jpg
-02_LowContrast (2).jpg
-03_Blurred (2).jpg
-04_HighNoise (2).jpg
-05_LowResolution_Upsampled (2).jpg
-06_Faded_Underexposed (2).jpg
-07_ColorShift_WarmTint (2).jpg
-08_JPEGCompression_Artifacts (2).jpg
-09_CombinedDegradation (2).jpg
+C:\Program Files\Tesseract-OCR\tesseract.exe
+C:\Program Files (x86)\Tesseract-OCR\tesseract.exe
 ```
 
-### Signature Absent
+Jika Tesseract dipasang di lokasi lain, ubah daftar `TESSERACT_PATHS` di
+`main.py` agar mencantumkan lokasi `tesseract.exe` yang benar. Program berhenti
+dengan pesan kesalahan apabila executable tidak ditemukan.
 
-Folder:
+### 2. Siapkan lingkungan Python dan paket
 
-```text
-hasil_sample/
+Buka PowerShell di direktori proyek, lalu jalankan:
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install opencv-python numpy pytesseract
 ```
 
-Berisi 9 citra sampel:
+Jika PowerShell menolak aktivasi skrip, Anda dapat menjalankan Python dari
+lingkungan virtual secara langsung:
 
-```text
-sample_01.jpg
-sample_02.jpg
-sample_03.jpg
-sample_04.jpg
-sample_05.jpg
-sample_06.jpg
-sample_07.jpg
-sample_08.jpg
-sample_09.jpg
+```powershell
+.\.venv\Scripts\python.exe -m pip install opencv-python numpy pytesseract
 ```
 
-## Struktur Folder Project
+## Menjalankan program
 
-Struktur project yang digunakan:
+Dari direktori proyek (direktori yang berisi `main.py` dan
+`gambar_ijazah`), jalankan:
 
-```text
-citra6/
-│
-├── tugasCitra/
-│   ├── 01_HighQuality_Enhanced (2)(1).jpg
-│   ├── 02_LowContrast (2).jpg
-│   ├── 03_Blurred (2).jpg
-│   ├── 04_HighNoise (2).jpg
-│   ├── 05_LowResolution_Upsampled (2).jpg
-│   ├── 06_Faded_Underexposed (2).jpg
-│   ├── 07_ColorShift_WarmTint (2).jpg
-│   ├── 08_JPEGCompression_Artifacts (2).jpg
-│   └── 09_CombinedDegradation (2).jpg
-│
-├── hasil_sample/
-│   ├── sample_01.jpg
-│   ├── sample_02.jpg
-│   ├── sample_03.jpg
-│   ├── sample_04.jpg
-│   ├── sample_05.jpg
-│   ├── sample_06.jpg
-│   ├── sample_07.jpg
-│   ├── sample_08.jpg
-│   └── sample_09.jpg
-│
-├── test.py
-└── README.md
+```powershell
+python main.py
 ```
 
-Setelah program dijalankan, folder hasil akan dibuat secara otomatis.
-
-## Requirements
-
-Program membutuhkan:
-
-- Python 3.x
-- OpenCV
-- NumPy
-- Matplotlib
-
-## Instalasi Library
-
-Buka terminal pada folder project, kemudian jalankan:
-
-```bash
-pip install opencv-python numpy matplotlib
-```
-
-Untuk memastikan Python sudah terpasang, jalankan:
-
-```bash
-python --version
-```
-
-Jika perintah `python` tidak tersedia, dapat mencoba:
-
-```bash
-py --version
-```
-
-## Cara Menjalankan Program
-
-### 1. Buka folder project
-
-Contoh lokasi project:
-
-```text
-D:\citra6
-```
-
-Pada CMD, jalankan:
-
-```bash
-cd /d D:\citra6
-```
-
-Jika menggunakan terminal VS Code, buka folder project `citra6`.
-
-### 2. Pastikan dataset tersedia
-
-Sebelum menjalankan program, pastikan folder berikut berada di dalam folder project:
-
-```text
-tugasCitra/
-hasil_sample/
-```
-
-Pastikan masing-masing folder berisi 9 citra.
-
-### 3. Jalankan program
-
-Jalankan:
-
-```bash
-python test.py
-```
-
-atau:
-
-```bash
-py test.py
-```
-
-Program kemudian akan memproses seluruh citra dari folder `tugasCitra` dan `hasil_sample`.
-
-## Alur Program
-
-Secara umum, proses program adalah:
-
-```text
-Citra Asli
-    │
-    ▼
-Grayscale
-    │
-    ├───────────────┐
-    ▼               ▼
-Otsu          Global Threshold
-    │               │
-    ├──────┐        ├──────┐
-    ▼      ▼        ▼      ▼
-Opening Closing   Opening Closing
-    │      │        │      │
-    └──────┴────────┴──────┘
-              │
-              ▼
-   Karakteristik Segmentasi
-              │
-              ▼
-     Foreground Pixel
-              │
-              ▼
-     Foreground (%)
-              │
-              ▼
-          Prediksi
-```
-
-## Karakteristik Segmentasi
-
-Untuk setiap hasil segmentasi, program menghitung beberapa karakteristik, yaitu:
-
-- Total pixel
-- Foreground pixel
-- Background pixel
-- Persentase foreground
-- Persentase background
-- Nilai threshold Global
-- Nilai threshold Otsu
-
-Foreground dihitung berdasarkan jumlah pixel bernilai putih pada hasil citra biner.
-
-Persentase foreground dihitung dengan rumus:
-
-```text
-Foreground (%) =
-(Foreground Pixel / Total Pixel) × 100%
-```
-
-## Thresholding
-
-### Global Threshold
-
-Global Threshold menggunakan nilai threshold yang telah ditentukan untuk memisahkan foreground dan background.
-
-Pada program digunakan nilai:
-
-```text
-Threshold Global = 127
-```
-
-### Otsu Threshold
-
-Otsu digunakan untuk menentukan nilai threshold secara otomatis berdasarkan distribusi intensitas citra.
-
-Nilai threshold Otsu ditampilkan pada terminal untuk setiap citra yang diproses.
-
-## Morphological Operation
-
-Setelah proses thresholding, hasil segmentasi diperbaiki menggunakan dua operasi morfologi.
-
-### Opening
-
-Opening digunakan untuk membantu mengurangi noise atau objek kecil pada hasil segmentasi.
-
-Urutannya adalah:
-
-```text
-Erosion → Dilation
-```
-
-### Closing
-
-Closing digunakan untuk membantu menghubungkan bagian foreground yang terputus dan mengisi celah kecil pada objek.
-
-Urutannya adalah:
-
-```text
-Dilation → Erosion
-```
-
-Program menggunakan kernel morfologi berukuran:
-
-```text
-3 × 3
-```
-
-## Klasifikasi Signature
-
-Prediksi keberadaan tanda tangan dilakukan berdasarkan persentase foreground.
-
-Batas klasifikasi yang digunakan adalah:
-
-```text
-Foreground >= 3,00%
-        ↓
-Signature Present
-
-Foreground < 3,00%
-        ↓
-Signature Absent
-```
-
-## Output Program
-
-Setelah program selesai dijalankan, hasil pengolahan akan tersimpan dalam folder:
-
-```text
-hasil_proses/
-```
-
-Struktur output:
-
-```text
-hasil_proses/
-│
-├── signature_present/
-│   ├── grayscale/
-│   ├── otsu/
-│   ├── global/
-│   ├── otsu_opening/
-│   ├── otsu_closing/
-│   ├── global_opening/
-│   ├── global_closing/
-│   └── perbandingan/
-│
-└── signature_absent/
-    ├── grayscale/
-    ├── otsu/
-    ├── global/
-    ├── otsu_opening/
-    ├── otsu_closing/
-    ├── global_opening/
-    ├── global_closing/
-    └── perbandingan/
-```
-
-## Jenis File Output
-
-Untuk setiap citra akan dihasilkan beberapa file berdasarkan tahapan pengolahan:
-
-```text
-Grayscale
-Otsu
-Global Threshold
-Otsu Opening
-Otsu Closing
-Global Opening
-Global Closing
-```
-
-Selain itu, program membuat folder `perbandingan/` yang berisi gambar perbandingan dari satu citra. Gambar tersebut menampilkan citra asli, grayscale, Otsu, Global Threshold, Otsu Opening, Otsu Closing, Global Opening, Global Closing, serta catatan hasil perbandingan.
-
-## Output Terminal
-
-Saat program dijalankan, informasi setiap citra akan ditampilkan pada terminal, meliputi:
-
-- Nama citra
-- Ukuran citra
-- Threshold Global
-- Threshold Otsu
-- Total pixel
-- Foreground pixel
-- Background pixel
-- Persentase foreground
-- Persentase background
-- Hasil Opening
-- Hasil Closing
-- Catatan hasil perbandingan
-
-## Catatan Hasil Perbandingan
-
-Program juga membuat catatan otomatis berdasarkan perubahan jumlah foreground setelah proses opening dan closing.
-
-Catatan digunakan untuk melihat:
-
-- Perubahan foreground setelah Otsu Opening.
-- Perubahan foreground setelah Otsu Closing.
-- Perubahan foreground setelah Global Opening.
-- Perubahan foreground setelah Global Closing.
-- Perbandingan area foreground antara Otsu dan Global Threshold.
-
-Catatan tersebut ditampilkan pada terminal dan juga dimasukkan ke dalam gambar hasil perbandingan.
-
-## Tujuan Program
-
-Program ini digunakan untuk melakukan pengujian terhadap proses segmentasi citra pada dua kategori dataset, yaitu **Signature Present** dan **Signature Absent**. Hasil pengolahan dapat digunakan untuk melihat perbedaan karakteristik foreground pada kedua kategori serta mengevaluasi hasil segmentasi menggunakan metode thresholding dan morphological operation.
-
-## Author
-
-**Juliana**  
-Program Studi Ilmu Komputer  
-Fakultas Matematika dan Ilmu Pengetahuan Alam  
-Universitas Halu Oleo  
-
-**Tahun: 2026**
+Pastikan folder `gambar_ijazah` berisi setidaknya satu gambar yang didukung.
+Jika folder tidak berisi gambar yang didukung, program menampilkan pesan bahwa
+tidak ada gambar untuk diproses.
+
+## Konfigurasi
+
+Di bagian konfigurasi `main.py`:
+
+- `FOLDER` menentukan folder gambar yang akan dibaca. Nilai bawaan:
+  `gambar_ijazah`.
+- `GROUND_TRUTH` adalah nomor ijazah acuan. Ganti nilainya sesuai dataset
+  sebelum menjalankan program.
+- `TESSERACT_PATHS` berisi lokasi-lokasi `tesseract.exe` yang akan diperiksa.
+
+`GROUND_TRUTH` berpengaruh pada dua hal: pemilihan kandidat angka oleh
+panjangnya yang paling mendekati nomor acuan, serta penghitungan CER. Program
+juga memilih enhancement dengan CER terkecil. Karena itu, hasil pilihan
+enhancement menggunakan nomor acuan dan bukan evaluasi independen tanpa
+label. Gunakan nomor acuan yang benar untuk dataset yang sedang dianalisis.
+
+## Alur pemrosesan
+
+Untuk setiap gambar, program:
+
+1. Membaca gambar dan mengubahnya menjadi grayscale.
+2. Membuat tiga versi enhancement: contrast stretching, CLAHE, dan gamma
+   correction dengan gamma `1.5`.
+3. Menjalankan OCR pada setiap versi dengan konfigurasi Tesseract `--psm 6`.
+4. Mengambil rangkaian angka yang memiliki setidaknya 10 digit. Jika ada
+   beberapa kandidat, dipilih kandidat dengan panjang yang paling dekat dengan
+   panjang `GROUND_TRUTH`.
+5. Menghitung CER dari jarak Levenshtein kandidat terhadap `GROUND_TRUTH`, lalu
+   memilih versi enhancement dengan CER terkecil.
+6. Menandai area teks yang terdeteksi OCR, lalu menjalankan deteksi tanda
+   tangan dengan Otsu dan adaptive threshold. Hasil dipilih berdasarkan skor
+   kandidat, dengan persentase area sebagai pemecah nilai seri.
+7. Menampilkan nomor yang diprediksi, CER, enhancement terpilih, status tanda
+   tangan, metode deteksi, dan persentase area tanda tangan di terminal.
+
+Deteksi tanda tangan merupakan heuristik berbasis ukuran, rasio aspek, luas,
+dan kepadatan komponen citra setelah pemrosesan; hasil `PRESENT` atau `ABSENT`
+bukan verifikasi tanda tangan secara biometrik.
+
+## Memahami keluaran
+
+- **Nomor Ijazah**: kandidat angka yang diekstrak dari OCR.
+- **CER (%)**: jarak edit Levenshtein antara kandidat dan `GROUND_TRUTH`,
+  dibagi jumlah karakter pada `GROUND_TRUTH`, lalu ditampilkan sebagai
+  persentase. Nilai lebih rendah berarti lebih dekat dengan acuan. Jika OCR
+  tidak menghasilkan kandidat, CER adalah `100%`.
+- **Enhancement Terbaik**: metode peningkatan citra yang menghasilkan CER
+  paling kecil terhadap acuan.
+- **Tanda Tangan**: `PRESENT` jika deteksi menemukan komponen yang memenuhi
+  kriteria program; selain itu `ABSENT`.
+- **Metode**: metode thresholding yang dipilih, yaitu `Otsu` atau
+  `Adaptive Threshold`.
+- **Persentase Area**: luas komponen tanda tangan terpilih dibanding luas
+  seluruh gambar, dalam persen. Nilainya `0%` jika tidak ditemukan kandidat.
+
+## Pemecahan masalah
+
+- **`Tesseract tidak ditemukan`**: pasang Tesseract OCR atau tambahkan lokasi
+  `tesseract.exe` ke `TESSERACT_PATHS`.
+- **`Tidak ada gambar di folder`**: periksa bahwa `gambar_ijazah` berada di
+  direktori kerja saat ini dan berisi berkas `.jpg`, `.jpeg`, atau `.png`.
+- **`Gagal membaca` gambar**: pastikan berkas gambar dapat dibuka dan tidak
+  rusak.
+- **Hasil OCR atau deteksi tidak sesuai**: verifikasi `GROUND_TRUTH`, kualitas
+  gambar, dan lokasi teks/tanda tangan. Algoritma saat ini menggunakan ambang
+  dan kriteria heuristik tetap di `main.py`, sehingga hasil dapat bervariasi
+  untuk gambar dengan karakteristik berbeda.
